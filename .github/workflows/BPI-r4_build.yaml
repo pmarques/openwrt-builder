@@ -29,6 +29,11 @@ jobs:
           repository: ${{ env.REMOTE_REPOSITORY }}
           ref: ${{ env.REMOTE_BRANCH }}
 
+      - name: Checkout current repository
+        uses: actions/checkout@v4
+        with:
+          path: "current_repo"
+
       - name: Update and install feeds
         run: |
           ./scripts/feeds update -a
@@ -36,7 +41,7 @@ jobs:
 
       - name: Configure firmware image
         run: |
-          cat ${{ env.CONFIG_FILE }} > .config
+          mv custom_repo/${{ env.CONFIG_FILE }} .config
           make defconfig
 
       - name: Try to fetch dependencies cache
