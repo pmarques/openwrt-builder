@@ -96,19 +96,25 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: bpi_r4-images
+      
       - name: Extract artifacts
         run: tar xf bpi_r4-images.tar
+      
       - name: Get current date
-        run: echo "RELEASE_DATE=$(date +%F)" >> $GITHUB_ENV
+        run: |
+          echo "RELEASE_DATE=$(date +%F)" >> $GITHUB_ENV
+          echo -n "BUILD_VER_STR=$( cat bin/targets/mediatek/filogic/profiles.json | jq -r '.profiles.[].image_prefix' | sed -E 's/o
+      
       - name: Create release
         uses: softprops/action-gh-release@master
         with:
           files: bin/targets/mediatek/filogic/*
-          tag_name: ${{ env.RELEASE_PREFIX }}-${{ env.RELEASE_DATE }}
-          name: Openwrt BPI-r4 ${{ env.RELEASE_DATE }}
+          tag_name: ${{ env.RELEASE_PREFIX }}-${{ env.BUILD_VER_STR }}
+          name: Openwrt BPI-r4 ${{ env.BUILD_VER_STR }}
           body: |
-            Updated prebuilt images for ${{ env.RELEASE_DATE }}
+            Uploaded on: ${{ env.RELEASE_DATE }}
             Build Commit: ${{ needs.check_commits.outputs.latest_commit_sha }}
+      
       - name: Clean up old releases
         uses: dev-drprasad/delete-older-releases@master
         with:
