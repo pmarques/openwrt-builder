@@ -71,7 +71,7 @@ jobs:
           restore-keys: toolchain-${{ runner.os }}
 
       - name: Build the firmware image
-        run: ntry=1; while [[ $ntry -le 3 ]]; do make -j$(($(nproc)+1)) world && ntry=5 || (( ntry++ )); [[ $ntry -eq 4 ]] && exit 2
+        run: make -j$(($(nproc)+1)) world
 
       - name: Update host packages and toolchain cache
         uses: actions/cache/save@v4
