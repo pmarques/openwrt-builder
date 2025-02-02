@@ -1,13 +1,15 @@
 name: OpenWrt for Mediatek_mt7988a_bpi-r4 and release
 
 on:
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
 
 env:
   REMOTE_REPOSITORY: rmandrad/openwrt
   REMOTE_BRANCH: bananapi4
   CONFIG_FILE: bpi-r4.config
-  CUSTOM_FILES_PATH: files/
   RELEASE_PREFIX: Mediatek_mt7988a_bpi-r4
 
 jobs:  
@@ -20,29 +22,64 @@ jobs:
           sudo apt update
           sudo apt full-upgrade -y
           sudo apt install -y build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses5-dev libssl-dev python3-setuptools rsync swig unzip zlib1g-dev file wget
+      
       - name: Checkout remote repository
         uses: actions/checkout@v4
         with:
           repository: ${{ env.REMOTE_REPOSITORY }}
           ref: ${{ env.REMOTE_BRANCH }}
-      - name: Checkout current repository
-        uses: actions/checkout@v4
-        with:
-          path: "custom_repo"
+
       - name: Update and install feeds
         run: |
           ./scripts/feeds update -a
           ./scripts/feeds install -a
+
       - name: Configure firmware image
         run: |
           mv custom_repo/${{ env.CONFIG_FILE }} .config
           make defconfig
+
+      - name: Try to fetch dependencies cache
+        uses: actions/cache/restore@v4
+        with:
+          path: dl
+          key: dl-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: dl-${{ runner.os }}
+
       - name: Download dependencies
         run: make -j$(($(nproc)+1)) download
+
+      - name: Update dependencies cache every run
+        uses: actions/cache/save@v4
+        with:
+          path: dl
+          key: dl-${{ runner.os }}-${{ github.run_id }}
+
+      - name: Try to fetch host packages and toolchain cache
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            staging_dir/host
+            staging_dir/hostpkg
+            staging_dir/toolchain-aarch64_cortex-a53_gcc-14.2.0_musl
+          key: toolchain-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: toolchain-${{ runner.os }}
+
       - name: Build the firmware image
-        run: make -j$(($(nproc)+1)) world
+        run: ntry=1; while [[ $ntry -le 3 ]]; do make -j$(($(nproc)+1)) world && ntry=5 || (( ntry++ )); [[ $ntry -eq 4 ]] && exit 2
+
+      - name: Update host packages and toolchain cache
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            staging_dir/host
+            staging_dir/hostpkg
+            staging_dir/toolchain-aarch64_cortex-a53_gcc-14.2.0_musl
+          key: toolchain-${{ runner.os }}-${{ github.run_id }}
+      
       - name: Package output
         run: tar -cvf bpi_r4-images.tar bin/targets/mediatek/filogic
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
