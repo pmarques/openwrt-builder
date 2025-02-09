@@ -7,10 +7,10 @@ on:
   workflow_dispatch:
 
 env:
-  REMOTE_REPOSITORY: Yukariin/openwrt
-  REMOTE_BRANCH: bpir4
-  CONFIG_FILE: bpi-r4.config
-  RELEASE_PREFIX: Mediatek_mt7988a_bpi-r4
+  REMOTE_REPOSITORY: pmarques/openwrt
+  REMOTE_BRANCH: bpi-r4
+  CONFIG_FILE: pmarques.bpi-r4.config
+  RELEASE_PREFIX: bananapi-r4
 
 jobs:  
   build:
