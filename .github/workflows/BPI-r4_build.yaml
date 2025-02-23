@@ -7,8 +7,8 @@ on:
   workflow_dispatch:
 
 env:
-  REMOTE_REPOSITORY: pmarques/openwrt
-  REMOTE_BRANCH: bpi-r4
+  REMOTE_REPOSITORY: openwrt/openwrt
+  REMOTE_BRANCH: master
   CONFIG_FILE: pmarques.bpi-r4.config
   RELEASE_PREFIX: bananapi-r4
 
@@ -38,6 +38,9 @@ jobs:
         run: |
           ./scripts/feeds update -a
           ./scripts/feeds install -a
+
+      - name: Copy all patches
+        run: cp -rv current_repo/patches/* ./
 
       - name: Configure firmware image
         run: |
