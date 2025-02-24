@@ -1,18 +1,15 @@
 name: OpenWrt for Mediatek_mt7988a_bpi-r4 and release
 
 on:
-  push:
-    tags:
-      - "v*"
   workflow_dispatch:
 
 env:
-  REMOTE_REPOSITORY: openwrt/openwrt
-  REMOTE_BRANCH: master
+  OPENWRT_REPOSITORY: openwrt/openwrt
+  OPENWRT_BRANCH: master
   CONFIG_FILE: pmarques.bpi-r4.config
   RELEASE_PREFIX: bananapi-r4
 
-jobs:  
+jobs:
   build:
     name: Build OpenWrt
     runs-on: ubuntu-24.04
@@ -26,13 +23,26 @@ jobs:
       - name: Checkout remote repository
         uses: actions/checkout@v4
         with:
-          repository: ${{ env.REMOTE_REPOSITORY }}
-          ref: ${{ env.REMOTE_BRANCH }}
+          repository: ${{ env.OPENWRT_REPOSITORY }}
+          ref: ${{ env.OPENWRT_BRANCH }}
+
+      - name: Get OpenWrt commit SHA
+        id: openwrt_sha
+        run: |
+          echo "openwrt_commit_sha=$(git rev-parse HEAD)" >> $GITHUB_ENV
+          echo "openwrt_commit_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
       - name: Checkout current repository
         uses: actions/checkout@v4
         with:
           path: "current_repo"
+
+      - name: Get builder commit SHA
+        id: openwrt_sha
+        working-directory: current_repo
+        run: |
+          echo "builder_commit_sha=$(git rev-parse HEAD)" >> $GITHUB_ENV
+          echo "builder_commit_sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
       - name: Update and install feeds
         run: |
@@ -121,7 +131,9 @@ jobs:
           name: Openwrt BPI-r4 ${{ env.BUILD_VER_STR }}
           body: |
             Uploaded on: ${{ env.RELEASE_DATE }}
-            Build Commit: ${{ needs.check_commits.outputs.latest_commit_sha }}
+
+            Builder Commit: ${{ steps.openwrt_sha.outputs.openwrt_commit_sha }}
+            OpenWrt Commit: ${{ steps.openwrt_sha.outputs.openwrt_commit_sha }}
       
       - name: Clean up old releases
         uses: dev-drprasad/delete-older-releases@master
